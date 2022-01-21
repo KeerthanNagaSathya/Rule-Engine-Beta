@@ -5,14 +5,14 @@ import logging
 import logging.config
 
 
-class ingest():
+class Ingest:
 
     def __init__(self, spark):
-        print("Ingest constructor")
+        logging.info("Ingest constructor")
         self.spark = spark
 
     def ingest_config(self):
-        json_df = self.spark.read.option("multiline", "true").json("data/test.json")
+        json_df = self.spark.read.option("multiline", "true").json("data/rules.json")
         logging.info("reading test json from file")
         json_df.printSchema()
         return json_df
