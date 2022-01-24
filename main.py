@@ -54,7 +54,7 @@ class PipeLine:
         window_query = q.window_column_generator(pdf_collect, cdf_collect, "atm_transactions")
 
         with open("output/queries.txt", "w") as f:
-            logging.info(f"Opened a file < {f} for writing queries into it")
+            logging.info("Opened a file < {} for writing queries into it".format(f))
             f.write(window_query)
             f.write("\n")
 
@@ -70,7 +70,7 @@ class PipeLine:
         q.rules_pipeline(pdf_collect, cdf_collect, "atm_cumulative")
 
         f.close()
-        logging.info(f"Closed the file <{f}>.")
+        logging.info("Closed the file <{}>.".format(f))
 
         # Applying the rules query transformation to the cumulative atm dataframe
         '''atm2.createOrReplaceTempView("atm_cumulative")

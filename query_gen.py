@@ -16,19 +16,23 @@ class query_gen():
     def window_column_generator(self, pdf, cdf, table_name):
         ''''''"sum(amount) over (partition by id, date, txn_source_code order by date) as total_amount"''''''
 
-        amtQuery = f" sum(amount) over (partition by id, date, txn_source_code order by date) as total_amount"
-        logging.info(f"amtQuery > {amtQuery}")
+        print("This is {} {} {} {}"
+              .format("one", "two", "three", "four"))
+
+        amtQuery = " sum(amount) over (partition by id, date, txn_source_code order by date) as total_amount"
+        logging.info("amtQuery > {}".format(amtQuery))
 
         ''''''"max(time) over (partition by id, date, txn_source_code order by date) as max_time"''''''
 
-        maxtimeQuery = f" max(time) over (partition by id, date, txn_source_code order by date) as max_time"
-        logging.info(f"maxtimeQuery > {maxtimeQuery}")
+        maxtimeQuery = " max(time) over (partition by id, date, txn_source_code order by date) as max_time"
+        logging.info("maxtimeQuery > {}".format(maxtimeQuery))
 
-        mintimeQuery = f" min(time) over (partition by id, date, txn_source_code order by date) as min_time"
-        logging.info(f"mintimeQuery > {mintimeQuery}")
+        mintimeQuery = " min(time) over (partition by id, date, txn_source_code order by date) as min_time"
+        logging.info("mintimeQuery > {}".format(mintimeQuery))
 
-        select_query = f"select id, date, time, txn_source_code, amount, is_ttr, {amtQuery}, {mintimeQuery}, {maxtimeQuery} from {table_name}" + " order by id"
-        logging.info(f"select_query >  {select_query}")
+        select_query = "select id, date, time, txn_source_code, amount, is_ttr, {}, {}, {} from {}" + " order by id".format(
+            amtQuery, mintimeQuery, maxtimeQuery, table_name)
+        logging.info("select_query > {}".format(select_query))
         return select_query
 
     def rules_pipeline(self, pdf, cdf, table_name):
@@ -51,7 +55,7 @@ class query_gen():
             if p_is_valid == "true":
                 if p_valid_till != 1:  # This needs to be replaced with if current date is in between valid from and
                     # valid till
-                    logging.info(f"Rule {p_id} is valid and is being checked")
+                    logging.info("Rule {} is valid and is being checked".format(p_id))
 
                     for j in cdf:
                         # print(row["field_name"] + ' > ' + row["field_value"] + ' > ' + row["join"] + ' > ' + row[
@@ -71,12 +75,12 @@ class query_gen():
                                 if c_value.isnumeric():
                                     c_value = int(c_value)
                                     '''df.filter(col("state") == = "OH")'''
-                                    where_query = where_query + f" {c_name} {c_operator} {c_value}"
-                                    logging.info(f"query > {where_query}")
+                                    where_query = where_query + " {} {} {}".format(c_name, c_operator, c_value)
+                                    logging.info("query > {}".format(where_query))
                                 else:
                                     '''df.filter(col("state") == = "OH")'''
-                                    where_query = where_query + f" {c_name} {c_operator} '{c_value}'"
-                                    logging.info(f"query > {where_query}")
+                                    where_query = where_query + " {} {} '{}'".format(c_name, c_operator, c_value)
+                                    logging.info("query > {}".format(where_query))
 
                             else:
 
@@ -84,26 +88,31 @@ class query_gen():
 
                                 if c_value.isnumeric():
                                     c_value = int(c_value)
-                                    where_query = where_query + f" {c_name} {c_operator} {c_value}  {c_join}"
-                                    logging.info(f"query > {where_query}")
+                                    where_query = where_query + " {} {} {}  {}".format(c_name, c_operator, c_value,
+                                                                                       c_join)
+                                    logging.info("query > {}".format(where_query))
                                 else:
-                                    where_query = where_query + f" {c_name} {c_operator} '{c_value}'  {c_join}"
-                                    logging.info(f"query > {where_query}")
+                                    where_query = where_query + " {} {} '{}'  {}".format(c_name, c_operator, c_value,
+                                                                                         c_join)
+                                    logging.info("query > {}".format(where_query))
 
                     ttr_check = "true"
                     # time_diff = " and max_time - min_time > 30"
-                    where_query = f"select id, date, time, txn_source_code, amount, total_amount, is_ttr, ((bigint(to_timestamp(" \
-                                  f"max_time)))-(bigint(to_timestamp(min_time))))/(60) as time_diff from {table_name}" + where_query \
-                                  + " and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(min_time))))/(60) <= 30 order by id "
-                    logging.info(f"where query >  {where_query}")
+                    where_query = "select id, date, time, txn_source_code, amount, total_amount, is_ttr, ((bigint(" \
+                                  "to_timestamp(" \
+                                  "max_time)))-(bigint(to_timestamp(min_time))))/(60) as time_diff from {}".format(
+                                    table_name) + where_query \
+                                  + "and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(min_time))))/(60) <= " \
+                                    "30 order by id "
+                    logging.info("where query > {}".format(where_query))
                     rule_success = True
 
                 else:
-                    logging.info(f"Rule {p_valid_from} and {p_valid_till} are out of range and is skipped")
+                    logging.info("Rule {} and {} are out of range and is skipped".format(p_valid_from, p_valid_till))
                     rule_success = False
 
             else:
-                logging.info(f"Rule {p_id} is not valid and is skipped")
+                logging.info("Rule {} is not valid and is skipped".format(p_id))
                 rule_success = False
 
             if rule_success:
