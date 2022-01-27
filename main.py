@@ -1,3 +1,4 @@
+import pyspark
 from pyspark.sql import *
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
@@ -40,6 +41,12 @@ class PipeLine:
         pdf.printSchema()
         cdf.printSchema()
 
+        a =[1,2,3]
+        rdd = self.spark.sparkContext.parallelize(a)
+        type(a)
+        rdd2 = rdd.collect()
+        print(rdd2)
+
         pdf_collect = pdf.collect()
         cdf_collect = cdf.collect()
 
@@ -56,12 +63,10 @@ class PipeLine:
         with open("output/queries.txt", "w") as f:
             logging.info("Opened a file < {} for writing queries into it".format(f))
             f.write(window_query)
-            f.write("\n")
+            f.write("\n\n")
 
         # Applying the window query transformation to the source dataframe and storing it result in atm2 dataframe
-        atm2 = self.spark.sql(window_query).withColumn("min_time", to_timestamp("min_time")).withColumn("max_time",
-                                                                                                        to_timestamp(
-                                                                                                            "max_time"))
+        atm2 = self.spark.sql(window_query).withColumn("min_time", to_timestamp("min_time")).withColumn("max_time", to_timestamp("max_time"))
         atm2.printSchema()
         atm2.show()
 
@@ -71,11 +76,13 @@ class PipeLine:
 
         f.close()
         logging.info("Closed the file <{}>.".format(f))
-
+        
+        '''
         # Applying the rules query transformation to the cumulative atm dataframe
-        '''atm2.createOrReplaceTempView("atm_cumulative")
+        atm2.createOrReplaceTempView("atm_cumulative")
         rules_query = q.rules_generator(json_df_collect, "atm_cumulative")
-        self.spark.sql(rules_query).show()'''
+        self.spark.sql(rules_query).show()
+        '''
 
 
 if __name__ == '__main__':

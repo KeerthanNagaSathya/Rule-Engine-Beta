@@ -30,8 +30,8 @@ class query_gen():
         mintimeQuery = " min(time) over (partition by id, date, txn_source_code order by date) as min_time"
         logging.info("mintimeQuery > {}".format(mintimeQuery))
 
-        select_query = "select id, date, time, txn_source_code, amount, is_ttr, {}, {}, {} from {}" + " order by id".format(
-            amtQuery, mintimeQuery, maxtimeQuery, table_name)
+        select_query = "select id, date, time, txn_source_code, amount, is_ttr, {}, {}, {} from {}".format(
+            amtQuery, mintimeQuery, maxtimeQuery, table_name) + " order by id"
         logging.info("select_query > {}".format(select_query))
         return select_query
 
@@ -118,6 +118,6 @@ class query_gen():
             if rule_success:
                 with open("output/queries.txt", "a") as f:
                     f.write(where_query)
-                    f.write("\n")
+                    f.write("\n\n")
                 tempDf = self.spark.sql(where_query)
                 tempDf.show()
