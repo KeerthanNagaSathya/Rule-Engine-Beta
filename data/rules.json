@@ -32,7 +32,7 @@
   },
   {
     "id":2,
-    "name":"Cash rules",
+    "name":"Location check",
     "description": "ATM TTR Identification",
     "is_valid": "true",
     "valid_from": "10/12/2021",
@@ -40,15 +40,9 @@
     "when":
     [
           {
-            "field_name": "total_amount",
-            "operator": ">=",
-            "field_value": 10000,
-            "join": "AND"
-          },
-          {
-            "field_name": "txn_source_code",
-            "operator": "LIKE",
-            "field_value": "CASH",
+            "field_name": "city",
+            "operator": "=",
+            "field_value": "sydney",
             "join": ""
           }
     ],

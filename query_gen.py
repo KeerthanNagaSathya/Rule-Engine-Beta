@@ -37,12 +37,18 @@ class query_gen():
 
     def rules_pipeline(self, pdf, cdf, table_name):
         rule_success = False
-        select_query = """ with atm_window as (select id, date, txn_source_code, amount, is_ttr, time, sum(amount) over (partition by id, date, txn_source_code order by date) as total_amount, max(time) over (partition by id, date, txn_source_code order by date) as max_time, min(time) over (partition by id, date, txn_source_code order by date) as min_time from {}) select * from atm_window""".format(table_name)
+        check_rule = False
+        check_rule_id = 0
+        where_query = " where"
+        select_query = """ with atm_window as (select id, date, txn_source_code, city, amount, is_ttr, time, sum(amount) over (partition by id, date, txn_source_code order by date) as total_amount, max(time) over (partition by id, date, txn_source_code order by date) as max_time, min(time) over (partition by id, date, txn_source_code order by date) as min_time from {}) select * from atm_window""".format(table_name)
 
         for i in pdf:
 
-            where_query = " where"
             logging.info("Looping through the json list")
+
+            if check_rule:
+                where_query = where_query + " and"
+                logging.info("where_query > {}".format(where_query))
 
             p_id = i["id"]
             p_name = i["name"]
@@ -67,7 +73,14 @@ class query_gen():
                         c_join = j["join"]
                         c_operator = j["operator"]
 
-                        if int(p_id) == int(c_id):
+                        if check_rule:
+                            validate_rule_id = check_rule_id
+                            logging.info("check_rule is true and validate_rule_id is {}".format(validate_rule_id))
+                        else:
+                            validate_rule_id = int(p_id)
+                            logging.info("check_rule is false therefore follow the queue and validate_rule_id is {}".format(validate_rule_id))
+
+                        if int(c_id) == validate_rule_id:
 
                             if not (j["join"] and j["join"].strip()) != "":
 
@@ -106,10 +119,13 @@ class query_gen():
                                     table_name) + where_query \
                                   + "and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(min_time))))/(60) <= " \
                                     "30 order by id "
-                    '''
+                    
                     where_query = where_query + " and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(" \
                                                 "min_time))))/(60) <= " \
                                                 "30 order by id "
+                                                
+                    '''
+
                     logging.info("where query > {}".format(where_query))
                     rule_success = True
 
@@ -122,13 +138,22 @@ class query_gen():
                 rule_success = False
 
             if rule_success:
-                total_query = select_query + where_query
-                logging.info("total_query > {}".format(total_query))
-                if int(p_id) == 1:
+                logging.info("Rule {} is success and the field name is {} ".format(p_id, p_field_name))
+                if p_field_name == "lookup":
+                    check_rule = True
+                    check_rule_id = int(p_field_value)
+                    logging.info("check_rule_id is {} and check_rule is {} ".format(check_rule_id, check_rule))
+                else:
+                    where_query = where_query + " and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(" \
+                                                "min_time))))/(60) <= " \
+                                                "30 order by id "
+                    total_query = select_query + where_query
+                    logging.info("total_query > {}".format(total_query))
                     with open("output/queries.txt", "a") as f:
                         f.write(total_query)
                         f.write("\n\n")
-                tempDf = self.spark.sql(total_query)
-                tempDf.show()
-                if int(p_id) == 1:
+
+                    tempDf = self.spark.sql(total_query)
+                    tempDf.show()
                     tempDf.repartition(1).write.option("header", "true").csv("output/Dataframe")
+

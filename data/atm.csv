@@ -1,7 +1,7 @@
-id,date,txn_source_code,amount,is_ttr,time
-10,"16/01/2022","DEPOSIT",3000,false,"09:30:00.000000"
-10,"16/01/2022","DEPOSIT",9000,false,"09:40:00.000000"
-20,"16/01/2022","DEPOSIT",1000,false,"09:30:00.000000"
-20,"16/01/2022","DEPOSIT",10000,false,"16:30:00.000000"
-30,"16/01/2022","DEPOSIT",1000,false,"11:30:00.000000"
-40,"16/01/2022","DEPOSIT",10000,false,"12:30:00.000000"
+id,date,txn_source_code,amount,is_ttr,time,city
+10,"16/01/2022","DEPOSIT",3000,false,"09:30:00.000000","sydney"
+10,"16/01/2022","DEPOSIT",9000,false,"09:40:00.000000","sydney"
+20,"16/01/2022","DEPOSIT",1000,false,"09:30:00.000000","sydney"
+20,"16/01/2022","DEPOSIT",10000,false,"16:30:00.000000","sydney"
+30,"16/01/2022","DEPOSIT",1000,false,"11:30:00.000000","sydney"
+40,"16/01/2022","DEPOSIT",10000,false,"12:30:00.000000","melboune"
