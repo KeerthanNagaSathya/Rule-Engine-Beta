@@ -124,8 +124,11 @@ class query_gen():
             if rule_success:
                 total_query = select_query + where_query
                 logging.info("total_query > {}".format(total_query))
-                with open("output/queries.txt", "a") as f:
-                    f.write(total_query)
-                    f.write("\n\n")
+                if int(p_id) == 1:
+                    with open("output/queries.txt", "a") as f:
+                        f.write(total_query)
+                        f.write("\n\n")
                 tempDf = self.spark.sql(total_query)
                 tempDf.show()
+                if int(p_id) == 1:
+                    tempDf.repartition(1).write.option("header", "true").csv("output/Dataframe")

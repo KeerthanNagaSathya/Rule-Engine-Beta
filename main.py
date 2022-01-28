@@ -62,7 +62,7 @@ class PipeLine:
 
         with open("output/queries.txt", "w") as f:
             logging.info("Opened a file < {} for writing queries into it".format(f))
-            f.write(window_query)
+            # f.write(window_query)
             f.write("\n\n")
 
         # Applying the window query transformation to the source dataframe and storing it result in atm2 dataframe

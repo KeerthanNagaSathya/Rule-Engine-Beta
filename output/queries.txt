@@ -1,6 +1,4 @@
-select id, date, time, txn_source_code, amount, is_ttr,  sum(amount) over (partition by id, date, txn_source_code order by date) as total_amount,  min(time) over (partition by id, date, txn_source_code order by date) as min_time,  max(time) over (partition by id, date, txn_source_code order by date) as max_time from atm_transactions order by id
 
-select id, date, time, txn_source_code, amount, total_amount, is_ttr, ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(min_time))))/(60) as time_diff from atm_cumulative where amount >= 10000  AND txn_source_code LIKE 'DEPOSIT'and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(min_time))))/(60) <= 30 order by id 
 
-select id, date, time, txn_source_code, amount, total_amount, is_ttr, ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(min_time))))/(60) as time_diff from atm_cumulative where amount >= 10000  AND txn_source_code LIKE 'CASH'and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(min_time))))/(60) <= 30 order by id 
+ with atm_window as (select id, date, txn_source_code, amount, is_ttr, time, sum(amount) over (partition by id, date, txn_source_code order by date) as total_amount, max(time) over (partition by id, date, txn_source_code order by date) as max_time, min(time) over (partition by id, date, txn_source_code order by date) as min_time from atm_transactions) select * from atm_window where total_amount >= 10000  AND txn_source_code LIKE 'DEPOSIT' and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(min_time))))/(60) <= 30 order by id 
 
