@@ -37,6 +37,7 @@ class query_gen():
 
     def rules_pipeline(self, pdf, cdf, table_name):
         rule_success = False
+        select_query = """ with atm_window as (select id, date, txn_source_code, amount, is_ttr, time, sum(amount) over (partition by id, date, txn_source_code order by date) as total_amount, max(time) over (partition by id, date, txn_source_code order by date) as max_time, min(time) over (partition by id, date, txn_source_code order by date) as min_time from {}) select * from atm_window""".format(table_name)
 
         for i in pdf:
 
@@ -98,12 +99,17 @@ class query_gen():
 
                     ttr_check = "true"
                     # time_diff = " and max_time - min_time > 30"
+                    '''
                     where_query = "select id, date, time, txn_source_code, amount, total_amount, is_ttr, ((bigint(" \
                                   "to_timestamp(" \
                                   "max_time)))-(bigint(to_timestamp(min_time))))/(60) as time_diff from {}".format(
                                     table_name) + where_query \
                                   + "and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(min_time))))/(60) <= " \
                                     "30 order by id "
+                    '''
+                    where_query = where_query + " and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(" \
+                                                "min_time))))/(60) <= " \
+                                                "30 order by id "
                     logging.info("where query > {}".format(where_query))
                     rule_success = True
 
@@ -116,8 +122,10 @@ class query_gen():
                 rule_success = False
 
             if rule_success:
+                total_query = select_query + where_query
+                logging.info("total_query > {}".format(total_query))
                 with open("output/queries.txt", "a") as f:
-                    f.write(where_query)
+                    f.write(total_query)
                     f.write("\n\n")
-                tempDf = self.spark.sql(where_query)
+                tempDf = self.spark.sql(total_query)
                 tempDf.show()

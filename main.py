@@ -66,23 +66,18 @@ class PipeLine:
             f.write("\n\n")
 
         # Applying the window query transformation to the source dataframe and storing it result in atm2 dataframe
+        '''
         atm2 = self.spark.sql(window_query).withColumn("min_time", to_timestamp("min_time")).withColumn("max_time", to_timestamp("max_time"))
         atm2.printSchema()
         atm2.show()
-
+       
         atm2.createOrReplaceTempView("atm_cumulative")
+        '''
 
-        q.rules_pipeline(pdf_collect, cdf_collect, "atm_cumulative")
+        q.rules_pipeline(pdf_collect, cdf_collect, "atm_transactions")
 
         f.close()
         logging.info("Closed the file <{}>.".format(f))
-        
-        '''
-        # Applying the rules query transformation to the cumulative atm dataframe
-        atm2.createOrReplaceTempView("atm_cumulative")
-        rules_query = q.rules_generator(json_df_collect, "atm_cumulative")
-        self.spark.sql(rules_query).show()
-        '''
 
 
 if __name__ == '__main__':
