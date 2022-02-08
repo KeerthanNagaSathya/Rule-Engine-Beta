@@ -26,10 +26,10 @@ class PipeLine:
             .enableHiveSupport() \
             .getOrCreate()
 
-        logging.info("spark session created")
+        logging.debug("spark session created")
 
     def run_pipeline(self):
-        logging.info("run Pipeline")
+        logging.debug("run Pipeline")
 
         ingestion = ingest.Ingest(self.spark)
         json_df = ingestion.ingest_config()
@@ -38,14 +38,9 @@ class PipeLine:
         transformation = t.Transform(self.spark)
         pdf, cdf = transformation.parse_json(json_df)
 
-        pdf.printSchema()
-        cdf.printSchema()
-
-        a =[1,2,3]
-        rdd = self.spark.sparkContext.parallelize(a)
-        type(a)
-        rdd2 = rdd.collect()
-        print(rdd2)
+        # Show the schema of parent and child dataframe on console
+        logging.debug(pdf.printSchema())
+        logging.debug(cdf.printSchema())
 
         pdf_collect = pdf.collect()
         cdf_collect = cdf.collect()
@@ -58,26 +53,17 @@ class PipeLine:
         q = query_gen.query_gen(self.spark)
 
         # Generating a window query for the atm table to get the total amount, min time and max time
-        window_query = q.window_column_generator(pdf_collect, cdf_collect, "atm_transactions")
+        # window_query = q.window_column_generator(pdf_collect, cdf_collect, "atm_transactions")
 
         with open("output/queries.txt", "w") as f:
-            logging.info("Opened a file < {} for writing queries into it".format(f))
+            logging.debug("Opened a file < {} for writing queries into it".format(f))
             # f.write(window_query)
             f.write("\n\n")
-
-        # Applying the window query transformation to the source dataframe and storing it result in atm2 dataframe
-        '''
-        atm2 = self.spark.sql(window_query).withColumn("min_time", to_timestamp("min_time")).withColumn("max_time", to_timestamp("max_time"))
-        atm2.printSchema()
-        atm2.show()
-       
-        atm2.createOrReplaceTempView("atm_cumulative")
-        '''
 
         q.rules_pipeline(pdf_collect, cdf_collect, "atm_transactions")
 
         f.close()
-        logging.info("Closed the file <{}>.".format(f))
+        logging.debug("Closed the file <{}>.".format(f))
 
 
 if __name__ == '__main__':

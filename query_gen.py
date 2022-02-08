@@ -3,12 +3,11 @@ from pyspark.sql.functions import *
 from pyspark.sql.types import *
 import logging
 import logging.config
-import ingest
-from pyspark.sql.functions import *
-import datetime
 
 
-class query_gen():
+class query_gen:
+
+    logging.config.fileConfig("resources/logging.conf")
 
     def __init__(self, spark):
         self.spark = spark
@@ -20,19 +19,19 @@ class query_gen():
               .format("one", "two", "three", "four"))
 
         amtQuery = " sum(amount) over (partition by id, date, txn_source_code order by date) as total_amount"
-        logging.info("amtQuery > {}".format(amtQuery))
+        logging.debug("amtQuery > {}".format(amtQuery))
 
         ''''''"max(time) over (partition by id, date, txn_source_code order by date) as max_time"''''''
 
         maxtimeQuery = " max(time) over (partition by id, date, txn_source_code order by date) as max_time"
-        logging.info("maxtimeQuery > {}".format(maxtimeQuery))
+        logging.debug("maxtimeQuery > {}".format(maxtimeQuery))
 
         mintimeQuery = " min(time) over (partition by id, date, txn_source_code order by date) as min_time"
-        logging.info("mintimeQuery > {}".format(mintimeQuery))
+        logging.debug("mintimeQuery > {}".format(mintimeQuery))
 
         select_query = "select id, date, time, txn_source_code, amount, is_ttr, {}, {}, {} from {}".format(
             amtQuery, mintimeQuery, maxtimeQuery, table_name) + " order by id"
-        logging.info("select_query > {}".format(select_query))
+        logging.debug("select_query > {}".format(select_query))
         return select_query
 
     def rules_pipeline(self, pdf, cdf, table_name):
@@ -44,11 +43,11 @@ class query_gen():
 
         for i in pdf:
 
-            logging.info("Looping through the json list")
+            logging.debug("Looping through the json list")
 
             if check_rule:
                 where_query = where_query + " and"
-                logging.info("where_query > {}".format(where_query))
+                logging.debug("where_query > {}".format(where_query))
 
             p_id = i["id"]
             p_name = i["name"]
@@ -62,7 +61,7 @@ class query_gen():
             if p_is_valid == "true":
                 if p_valid_till != 1:  # This needs to be replaced with if current date is in between valid from and
                     # valid till
-                    logging.info("Rule {} is valid and is being checked".format(p_id))
+                    logging.debug("Rule {} is valid and is being checked".format(p_id))
 
                     for j in cdf:
                         # print(row["field_name"] + ' > ' + row["field_value"] + ' > ' + row["join"] + ' > ' + row[
@@ -75,85 +74,85 @@ class query_gen():
 
                         if check_rule:
                             validate_rule_id = check_rule_id
-                            logging.info("check_rule is true and validate_rule_id is {}".format(validate_rule_id))
+                            logging.debug("check_rule is true and validate_rule_id is {}".format(validate_rule_id))
                         else:
                             validate_rule_id = int(p_id)
-                            logging.info("check_rule is false therefore follow the queue and validate_rule_id is {}".format(validate_rule_id))
+                            logging.debug("check_rule is false therefore follow the queue and validate_rule_id is {}".format(validate_rule_id))
 
                         if int(c_id) == validate_rule_id:
 
                             if not (j["join"] and j["join"].strip()) != "":
 
-                                logging.info("Join is empty")
+                                logging.debug("Join is empty")
 
                                 if c_value.isnumeric():
                                     c_value = int(c_value)
                                     '''df.filter(col("state") == = "OH")'''
-                                    where_query = where_query + " {} {} {}".format(c_name, c_operator, c_value)
-                                    logging.info("query > {}".format(where_query))
+                                    if c_operator == "LIKE" or c_operator == "NOT LIKE":
+                                        where_query = where_query + " {} {} {}%".format(c_name, c_operator, c_value)
+                                    else:
+                                        where_query = where_query + " {} {} {}".format(c_name, c_operator, c_value)
+                                    logging.debug("query > {}".format(where_query))
                                 else:
                                     '''df.filter(col("state") == = "OH")'''
-                                    where_query = where_query + " {} {} '{}'".format(c_name, c_operator, c_value)
-                                    logging.info("query > {}".format(where_query))
+                                    if c_operator == "LIKE" or c_operator == "NOT LIKE":
+                                        where_query = where_query + " {} {} '{}%'".format(c_name, c_operator, c_value)
+                                    else:
+                                        where_query = where_query + " {} {} '{}'".format(c_name, c_operator, c_value)
+                                    logging.debug("query > {}".format(where_query))
 
                             else:
 
-                                logging.info("Join is not empty")
+                                logging.debug("Join is not empty")
 
                                 if c_value.isnumeric():
                                     c_value = int(c_value)
-                                    where_query = where_query + " {} {} {}  {}".format(c_name, c_operator, c_value,
+                                    if c_operator == "LIKE" or c_operator == "NOT LIKE":
+                                        where_query = where_query + " {} {} {}%  {}".format(c_name, c_operator, c_value,
                                                                                        c_join)
-                                    logging.info("query > {}".format(where_query))
+                                    else:
+                                        where_query = where_query + " {} {} {}  {}".format(c_name, c_operator, c_value,
+                                                                                            c_join)
+                                    logging.debug("query > {}".format(where_query))
                                 else:
-                                    where_query = where_query + " {} {} '{}'  {}".format(c_name, c_operator, c_value,
+                                    if c_operator == "LIKE" or c_operator == "NOT LIKE":
+                                        where_query = where_query + " {} {} '{}%'  {}".format(c_name, c_operator, c_value,
                                                                                          c_join)
-                                    logging.info("query > {}".format(where_query))
+                                    else:
+                                        where_query = where_query + " {} {} '{}'  {}".format(c_name, c_operator,
+                                                                                              c_value,
+                                                                                              c_join)
+                                    logging.debug("query > {}".format(where_query))
 
                     ttr_check = "true"
-                    # time_diff = " and max_time - min_time > 30"
-                    '''
-                    where_query = "select id, date, time, txn_source_code, amount, total_amount, is_ttr, ((bigint(" \
-                                  "to_timestamp(" \
-                                  "max_time)))-(bigint(to_timestamp(min_time))))/(60) as time_diff from {}".format(
-                                    table_name) + where_query \
-                                  + "and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(min_time))))/(60) <= " \
-                                    "30 order by id "
-                    
-                    where_query = where_query + " and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(" \
-                                                "min_time))))/(60) <= " \
-                                                "30 order by id "
-                                                
-                    '''
-
-                    logging.info("where query > {}".format(where_query))
+                    logging.debug("where query > {}".format(where_query))
                     rule_success = True
 
                 else:
-                    logging.info("Rule {} and {} are out of range and is skipped".format(p_valid_from, p_valid_till))
+                    logging.debug("Rule {} and {} are out of range and is skipped".format(p_valid_from, p_valid_till))
                     rule_success = False
 
             else:
-                logging.info("Rule {} is not valid and is skipped".format(p_id))
+                logging.debug("Rule {} is not valid and is skipped".format(p_id))
                 rule_success = False
 
             if rule_success:
-                logging.info("Rule {} is success and the field name is {} ".format(p_id, p_field_name))
+                logging.debug("Rule {} is success and the field name is {} ".format(p_id, p_field_name))
                 if p_field_name == "lookup":
                     check_rule = True
                     check_rule_id = int(p_field_value)
-                    logging.info("check_rule_id is {} and check_rule is {} ".format(check_rule_id, check_rule))
+                    logging.debug("check_rule_id is {} and check_rule is {} ".format(check_rule_id, check_rule))
                 else:
                     where_query = where_query + " and ((bigint(to_timestamp(max_time)))-(bigint(to_timestamp(" \
                                                 "min_time))))/(60) <= " \
                                                 "30 order by id "
                     total_query = select_query + where_query
-                    logging.info("total_query > {}".format(total_query))
+                    logging.debug("total_query > {}".format(total_query))
                     with open("output/queries.txt", "a") as f:
                         f.write(total_query)
                         f.write("\n\n")
 
                     tempDf = self.spark.sql(total_query)
                     tempDf.show()
-                    tempDf.repartition(1).write.option("header", "true").csv("output/Dataframe")
+                    # tempDf.repartition(1).write.option("header", "true").csv("output/Dataframe")
 
